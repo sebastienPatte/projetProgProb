@@ -1,0 +1,18 @@
+(** @canonical Byoppl.Basic *)
+module Basic = Byoppl__Basic
+
+
+(** @canonical Byoppl.Cps_operators *)
+module Cps_operators = Byoppl__Cps_operators
+
+
+(** @canonical Byoppl.Distribution *)
+module Distribution = Byoppl__Distribution
+
+
+(** @canonical Byoppl.Infer *)
+module Infer = Byoppl__Infer
+
+
+(** @canonical Byoppl.Utils *)
+module Utils = Byoppl__Utils

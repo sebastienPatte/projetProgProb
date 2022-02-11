@@ -1,0 +1,6 @@
+description = ""
+requires = "owl"
+archive(byte) = "byoppl.cma"
+archive(native) = "byoppl.cmxa"
+plugin(byte) = "byoppl.cma"
+plugin(native) = "byoppl.cmxs"
