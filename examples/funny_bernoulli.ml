@@ -1,5 +1,27 @@
 open Byoppl
 open Distribution
+
+
+let () =
+  Arg.parse Basic.speclist (fun _ -> ()) Basic.usage_msg;
+
+  
+open Basic.Enum_sampling
+
+let funny_bernoulli prob () =
+  let a = sample prob (bernoulli ~p:0.5) in
+  let b = sample prob (bernoulli ~p:0.5) in
+  let c = sample prob (bernoulli ~p:0.5) in
+  let () = assume prob (a = 1 || b = 1) in
+  a + b + c
+
+let _ =
+  Format.printf "@.-- Funny Bernoulli, Basic Enumeration Sampling --@.";
+  let dist = infer funny_bernoulli () in
+  let { values; probs; _ } = get_support ~shrink:true dist in
+  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values
+
+
 open Basic.Rejection_sampling
 
 let funny_bernoulli prob () =
