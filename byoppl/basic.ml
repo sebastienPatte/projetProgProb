@@ -57,8 +57,8 @@ module Enum_sampling = struct
     then prob.cur <- Array.append prob.cur [| new_info |]
     else prob.cur.(prob.id_sample) <- new_info;
 
-    (* update logits for current execution (multiply with logit of current sample) *)
-    prob.scores.(prob.id_exec) <- prob.scores.(prob.id_exec) *. (support.logits.(id));
+    (* update "score" for current execution (add logit of current sample) *)
+    prob.scores.(prob.id_exec) <- prob.scores.(prob.id_exec) +. (support.logits.(id));
     
     prob.id_sample <- prob.id_sample + 1;
     
