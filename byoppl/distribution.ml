@@ -82,7 +82,22 @@ let binomial ~p ~n =
   let logpdf x = Owl_stats.binomial_logpdf x ~p ~n in
   let mean () = Float.of_int n *. p in
   let var () = Float.of_int n *. p *. (1. -. p) in
+  
   make ~sample ~logpdf ~mean ~var ()
+
+  let binomial_sup ~p ~n =
+    assert (n >= 0 && 0. <= p && p <= 1.);
+    let sample () = Owl_stats.binomial_rvs ~p ~n in
+    let logpdf x = Owl_stats.binomial_logpdf x ~p ~n in
+    let mean () = Float.of_int n *. p in
+    let var () = Float.of_int n *. p *. (1. -. p) in
+    
+    let values = Array.init n (fun i -> i) in
+    let logits = Array.map (fun x -> logpdf x ) values in
+    let probs = Utils.normalize logits in 
+    let support = {values;logits;probs} in
+    
+    make ~sample ~logpdf ~support ~mean ~var ()  
 
 let dirac ~v =
   let sample () : 'a = v in

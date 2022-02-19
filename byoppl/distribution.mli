@@ -65,6 +65,9 @@ val bernoulli : p:float -> int t
 val binomial : p:float -> n:int -> int t
 (** {{: https://en.wikipedia.org/wiki/Binomial_distribution}Binomial distribution} of parameter [p] and [n]. *)
 
+val binomial_sup : p:float -> n:int -> int t
+(** {{: https://en.wikipedia.org/wiki/Binomial_distribution}Binomial distribution} of parameter [p] and [n] with "support" generation (use only for enumeration sampling, otherwise use "binomial" to avoid the cost of "support" generation). *)
+
 val dirac : v:'a -> 'a t
 (** {{: https://en.wikipedia.org/wiki/Dirac_distribution}Dirac distribution} on the value [v]. *)
 

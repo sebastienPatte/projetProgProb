@@ -137,7 +137,7 @@ end
 
 
 
-
+(* 
 module MH_MCMC = struct
 
 type like_prior = {
@@ -187,3 +187,4 @@ type 'a mcmc_sample = {
     let values = Array.mapi (fun i _ -> model { id = i; scores } data) scores in
     Distribution.support ~values ~logits:scores
 end
+ *)
