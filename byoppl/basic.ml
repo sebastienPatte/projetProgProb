@@ -135,6 +135,34 @@ module Importance_sampling = struct
 end
 
 
+module Multi_sites_MH = struct
+  type prob = { id : int; scores : float array; }
+
+  let sample _prob d = Distribution.draw d
+  let factor prob s = prob.scores.(prob.id) <- prob.scores.(prob.id) +. s
+  let observe prob d x = factor prob (Distribution.logpdf d x)
+  let assume prob p = factor prob (if p then 0. else -.infinity)
+
+  let infer ?(n = 1000) model data =
+    let scores = Array.make n 0. in
+    
+    let old_res = ref (model { id = 0; scores } data) in
+    
+    (* returns true with probability "p" *)
+    let decide p = Random.float 1. <= p in
+    
+    let exec i _ =  
+      if i=0 then !old_res 
+      else begin
+        let r = model { id = i; scores } data  in
+        if scores.(i) >= scores.(i-1) || decide (scores.(i-1) /. scores.(i) )
+        then old_res := r;
+        !old_res
+      end
+    in 
+    let values = Array.mapi exec scores in
+    Distribution.support ~values ~logits:scores
+end
 
 
 (* 

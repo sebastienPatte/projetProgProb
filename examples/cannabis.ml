@@ -33,6 +33,23 @@ let _ =
   let { values; probs; _ } = get_support ~shrink:true dist in
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values
 
+
+open Basic.Multi_sites_MH
+
+let cannabis prob () = 
+  let smoke = sample prob (bernoulli ~p:0.6) in
+  let coin = sample prob (bernoulli ~p:0.5) in
+  assume prob (coin=1 || smoke=1);
+  smoke
+
+let _ =
+  Format.printf "@.-- Cannabis, Multi_sites_MH Sampling --@.";
+  let dist = infer cannabis () in
+  let { values; probs; _ } = get_support ~shrink:true dist in
+  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values
+
+
+
 open Basic.Importance_sampling
 let cannabis prob () = 
   let smoke = sample prob (bernoulli ~p:0.6) in

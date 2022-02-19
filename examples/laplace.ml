@@ -15,6 +15,20 @@ open Distribution
      let m, s = Distribution.stats dist in
      Format.printf "Gender bias, mean: %f std:%f@." m s *)
 
+open Basic.Multi_sites_MH
+
+let laplace prob () =
+  let p = sample prob (uniform ~a:0. ~b:1.) in
+  let () = observe prob (binomial ~p ~n:493_472) 241_945 in
+  p
+
+let _ =
+  Format.printf "@.-- Laplace, Basic Multi_sites_MH Sampling --@.";
+  let dist = infer laplace () in
+  let m, s = Distribution.stats dist in
+  Format.printf "Gender bias, mean: %f std:%f@." m s
+
+
 open Basic.Importance_sampling
 
 let laplace prob () =

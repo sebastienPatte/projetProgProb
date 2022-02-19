@@ -13,6 +13,20 @@ let _ =
   let m, s = Distribution.stats dist in
   Format.printf "Coin bias, mean: %f std:%f@." m s
 
+open Basic.Multi_sites_MH
+
+let coin prob data =
+  let z = sample prob (uniform ~a:0. ~b:1.) in
+  let () = List.iter (observe prob (bernoulli ~p:z)) data in
+  z
+
+let _ =
+  Format.printf "@.-- Coin, Basic Multi_sites_MH Sampling --@.";
+  let dist = infer coin [ 0; 1; 1; 0; 0; 0; 0; 0; 0; 0 ] in
+  let m, s = Distribution.stats dist in
+  Format.printf "Coin bias, mean: %f std:%f@." m s
+  
+
 open Basic.Importance_sampling
 
 let coin prob data =

@@ -26,6 +26,18 @@ let _ =
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values
 
 
+open Basic.Multi_sites_MH
+let coin prob () = 
+  sample prob (binomial ~p:0.5 ~n:5)
+  
+
+let _ =
+  Format.printf "@.-- Coin binomial, Multi_sites_MH Sampling --@.";
+  let dist = infer coin () in
+  let { values; probs; _ } = get_support ~shrink:true dist in
+  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values  
+  
+
 open Basic.Importance_sampling
 let coin prob () = 
   sample prob (binomial ~p:0.5 ~n:5)
