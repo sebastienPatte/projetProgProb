@@ -133,3 +133,57 @@ module Importance_sampling = struct
     let values = Array.mapi (fun i _ -> model { id = i; scores } data) scores in
     Distribution.support ~values ~logits:scores
 end
+
+
+
+
+
+module MH_MCMC = struct
+
+type like_prior = {
+  log_likelihood : float;
+  log_prior : float;
+}
+type 'a mcmc_sample = {
+  value : 'a;
+  like_prior : like_prior
+}
+  type prob = { id : int; scores : float array }
+  (* let q x y =
+    let dist =  x - y in 
+    exp  *)
+  (* let target v =  (*do sth with v*) *)
+  let min_s x = if 1. > x then x else  1.
+
+  let sample _prob d = Distribution.draw d
+  (* let q prob =   *)
+
+  let MH prob d n q trace scores = 
+    let x_current = sample prob d in
+    for  i = 0 to n do 
+      let x_new_val = (q x_current ) in 
+      let x_new_score = scores in
+      let rw  = Random.float 1.0  in
+      let  p = (target x_new ) /. (target x_current) in 
+      let pq_ratio = in (* ici faut diviser les scores*)
+      let alpha = min_s pq   in 
+      if alpha > rw 
+        then 
+        (*inserer dans le trace*)
+          (* trace <- Array.append trace [|x_new_val|]; *)
+          (* insert score too, or should we have trace as array of a custom type pair {value,score?} *)
+          x_current = x_new_val
+        else
+          (* trace <- Array.append trace [|x_current|]; *)
+          (* + maj score aussi *)
+    done
+
+  let factor prob s = prob.scores.(prob.id) <- prob.scores.(prob.id) +. s
+  let observe prob d x = factor prob (Distribution.logpdf d x)
+  let assume prob p = factor prob (if p then 0. else -.infinity)
+
+  let infer ?(n = 1000) model data =
+    let scores = Array.make n 0. in
+    let values = Array.mapi (fun i _ -> model { id = i; scores } data) scores in
+    Distribution.support ~values ~logits:scores
+end
