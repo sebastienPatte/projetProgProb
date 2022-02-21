@@ -164,8 +164,72 @@ module Multi_sites_MH = struct
     Distribution.support ~values ~logits:scores
 end
 
+(* @MB to HMC site goes here *)
+(* Hamiltonian Monte-Carlo (HMC) *)
+module HMC = struct
+  type prob = { id : int; scores : float array; }
+
+  let sample _prob d = Distribution.draw d
+  let factor prob s = prob.scores.(prob.id) <- prob.scores.(prob.id) +. s
+  let observe prob d x = factor prob (Distribution.logpdf d x)
+  let assume prob p = factor prob (if p then 0. else -.infinity)
+
+  (* maybe add the normal function to distribution later *)
+  (* the momentum P is sampled from a normal distro *)  
+  let normal x mu sigma= 
+    let a =exp  (-1. *. ((x -. mu)**2.)/. (2. *. sigma**2.))  in
+    let pi =  3.1415926 in 
+    let b = sigma *. sqrt (2. *. pi) in
+    a /. b
+
+  
+  let infer ?(n = 1000) model data =
+    let scores = Array.make n 0. in
+    let mu = 0. and sigma = 1. in 
+    let path_len = 1. and  step_size = 0.5 in
+    let steps = int_of_float ( path_len /. step_size ) 
+    
+    let old_res = ref (model { id = 0; scores } data) in
+    let momentum = normal sth mu sigma in
+    let gradient = -. ( -. mu /.  sigma ** 2 ) in
+    
+    (* returns true with probability "p" *)
+    let decide p = Random.float 1. <= p in
+    let min_s x = if 1. > x then x else  1. in
+    (* H the hamiltonian discretized *)
+    let H p q  =
+      let r_p = ref p in
+      let r_q = ref q in
+      for i = 0 to steps do
+        r_p :=  !r_p  + step_size *. ( gradient /. 2.) 
+        r_q :=  !r_q + !r_p *. step_size
+        r_p :=  !r_p  + step_size *. ( gradient /. 2.) 
+      
+      done
+      !r_p , !r_q
+      in 
+    
+    let exec i _ =  
+      if i=0 then !old_res 
+      else begin
+        let r = model { id = i; scores } data  in
+        let acc  = Random.float 1.0  in
+        (* edit next line properly *)
+        let pq = (exp ( -. H sth sth ))  ./ (exp ( -. H sth_1 sth_1)) in
+        let alpha = min_s pq   in 
+        if acc < alpha
+        (* if scores.(i) >= scores.(i-1) || decide (scores.(i-1) /. scores.(i) ) *)
+        then old_res := r;
+        !old_res
+      end
+    in 
+    let values = Array.mapi exec scores in
+    Distribution.support ~values ~logits:scores
+end
+
 
 (* 
+(* @MB to do single site goes here *)
 module MH_MCMC = struct
 
 type like_prior = {
