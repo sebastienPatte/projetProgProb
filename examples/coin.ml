@@ -3,6 +3,7 @@ open Distribution
 
 open Basic.Rejection_sampling
 
+
 let coin prob data =
   let z = sample prob (uniform ~a:0. ~b:1.) in
   let () = List.iter (observe prob (bernoulli ~p:z)) data in
