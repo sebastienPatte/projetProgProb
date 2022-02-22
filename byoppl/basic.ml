@@ -1,8 +1,5 @@
 
-let usage_msg = "dune exec ./examples/[name].exe  [-verbose] "
-let verbose = ref false
-let speclist =
-  [("-verbose", Arg.Set verbose, "Output debug information");]
+
 
 module Enum_sampling = struct
   type info = {
@@ -16,16 +13,6 @@ module Enum_sampling = struct
     mutable id_exec : int;
     mutable id_sample : int
   }
-
-  let print_prob fmt prob = 
-    Format.fprintf fmt "\nEXEC %d" prob.id_exec ;
-    Format.fprintf fmt "\nOLD : ";
-    Array.iter (fun {value=v;last=l} -> Format.fprintf fmt "(%d, %b); " v l;) prob.old;
-    Format.fprintf fmt "\nCUR : ";
-    Array.iter (fun {value=v;last=l} -> Format.fprintf fmt "(%d, %b); " v l;) prob.cur;
-    Format.fprintf fmt "\nSCORES : ";
-    Array.iter (Format.fprintf fmt "%f; ") prob.scores;
-    Format.fprintf fmt "\n\n"
 
   let sample prob d = 
     
@@ -75,11 +62,9 @@ module Enum_sampling = struct
   let infer  model data =
     let prob = {old=[||]; cur=[||]; scores=[||];id_exec=0;id_sample=0} in
     let rec exec i =
-      prob.scores <- Array.append prob.scores [|1.|];
+      prob.scores <- Array.append prob.scores [|0.|];
       
       let r = model prob data in
-      
-      if !verbose then print_prob Format.std_formatter prob;
       
       (* prob.old now points to prob.cur (pointer alias) *)
       prob.old <- prob.cur;
@@ -138,11 +123,17 @@ end
 module Multi_sites_MH = struct
   type prob = { id : int; scores : float array; }
 
-  let sample _prob d = Distribution.draw d
   let factor prob s = prob.scores.(prob.id) <- prob.scores.(prob.id) +. s
-  let observe prob d x = factor prob (Distribution.logpdf d x)
-  let assume prob p = factor prob (if p then 0. else -.infinity)
 
+  let sample prob d = 
+    let s = Distribution.draw d in
+    factor prob (Distribution.logpdf d s);
+    s
+  
+  let assume prob p = factor prob (if p then 0. else -.infinity)
+  
+  let observe prob d x = factor prob (Distribution.logpdf d x)
+  
   let infer ?(n = 1000) model data =
     let scores = Array.make n 0. in
     
@@ -155,64 +146,13 @@ module Multi_sites_MH = struct
       if i=0 then !old_res 
       else begin
         let r = model { id = i; scores } data  in
-        if scores.(i) >= scores.(i-1) || decide (scores.(i-1) /. scores.(i) )
-        then old_res := r;
+        if scores.(i) >= scores.(i-1) || decide ( scores.(i) /. scores.(i-1) )
+        then old_res := r
+        else scores.(i) <- scores.(i-1);
         !old_res
       end
-    in 
+    in
+
     let values = Array.mapi exec scores in
     Distribution.support ~values ~logits:scores
 end
-
-
-(* 
-module MH_MCMC = struct
-
-type like_prior = {
-  log_likelihood : float;
-  log_prior : float;
-}
-type 'a mcmc_sample = {
-  value : 'a;
-  like_prior : like_prior
-}
-  type prob = { id : int; scores : float array }
-  (* let q x y =
-    let dist =  x - y in 
-    exp  *)
-  (* let target v =  (*do sth with v*) *)
-  let min_s x = if 1. > x then x else  1.
-
-  let sample _prob d = Distribution.draw d
-  (* let q prob =   *)
-
-  let MH prob d n q trace scores = 
-    let x_current = sample prob d in
-    for  i = 0 to n do 
-      let x_new_val = (q x_current ) in 
-      let x_new_score = scores in
-      let rw  = Random.float 1.0  in
-      let  p = (target x_new ) /. (target x_current) in 
-      let pq_ratio = in (* ici faut diviser les scores*)
-      let alpha = min_s pq   in 
-      if alpha > rw 
-        then 
-        (*inserer dans le trace*)
-          (* trace <- Array.append trace [|x_new_val|]; *)
-          (* insert score too, or should we have trace as array of a custom type pair {value,score?} *)
-          x_current = x_new_val
-        else
-          (* trace <- Array.append trace [|x_current|]; *)
-          (* + maj score aussi *)
-    done
-
-  let factor prob s = prob.scores.(prob.id) <- prob.scores.(prob.id) +. s
-  let observe prob d x = factor prob (Distribution.logpdf d x)
-  let assume prob p = factor prob (if p then 0. else -.infinity)
-
-  let infer ?(n = 1000) model data =
-    let scores = Array.make n 0. in
-    let values = Array.mapi (fun i _ -> model { id = i; scores } data) scores in
-    Distribution.support ~values ~logits:scores
-end
- *)

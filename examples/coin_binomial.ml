@@ -1,6 +1,7 @@
 open Byoppl
 open Distribution
 
+
 open Basic.Enum_sampling
 
 let coin prob () = 
@@ -36,7 +37,8 @@ let _ =
   let dist = infer coin () in
   let { values; probs; _ } = get_support ~shrink:true dist in
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values  
-  
+    
+
 
 open Basic.Importance_sampling
 let coin prob () = 
@@ -64,7 +66,31 @@ let _ =
   done;
   Format.printf "@."
 
-open Cps_operators
+open Infer.Multi_MH
+
+let coin () = 
+  let* c = sample (binomial ~p:0.5 ~n:5) in
+  return c
+
+let _ =
+  Format.printf "@.-- Coin binomial, CPS Multi-sites MH Sampling --@.";
+  let dist = infer coin () in
+  let { values; probs; _ } = get_support ~shrink:true dist in
+  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values
+  
+open Infer.MH
+
+let coin () = 
+  let* c = sample (binomial ~p:0.5 ~n:5) in
+  return c
+
+let _ =
+  Format.printf "@.-- Coin binomial, CPS Single-site MH Sampling --@.";
+  let dist = infer coin () in
+  let { values; probs; _ } = get_support ~shrink:true dist in
+  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values
+  
+
 open Infer.Importance_sampling
 
 let coin () = 
