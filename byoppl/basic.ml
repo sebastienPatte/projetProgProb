@@ -156,16 +156,18 @@ module Multi_sites_MH = struct
     Distribution.support ~values ~logits:scores
 end
 
-(* @MB to HMC site goes here *)
-(* Hamiltonian Monte-Carlo (HMC) *)
-(* module HMC = struct
+module HMC = struct
   type prob = { id : int; scores : float array; }
-
-  let sample _prob d = Distribution.draw d
+ 
+  
   let factor prob s = prob.scores.(prob.id) <- prob.scores.(prob.id) +. s
+  let sample prob d = 
+    let s = Distribution.draw d in
+    factor prob (Distribution.logpdf d s);
+    s
   let observe prob d x = factor prob (Distribution.logpdf d x)
   let assume prob p = factor prob (if p then 0. else -.infinity)
-
+ 
   (* maybe add the normal function to distribution later *)
   (* the momentum P is sampled from a normal distro *)  
   let normal x mu sigma= 
@@ -173,96 +175,77 @@ end
     let pi =  3.1415926 in 
     let b = sigma *. sqrt (2. *. pi) in
     a /. b
-
-  
+ 
+  let neg_log_prob x mu sigma = 
+    -. 1. *.  (  normal  x mu sigma )
+ 
+ 
   let infer ?(n = 1000) model data =
     let scores = Array.make n 0. in
     let mu = 0. and sigma = 1. in 
     let path_len = 1. and  step_size = 0.5 in
-    let steps = int_of_float ( path_len /. step_size ) 
-    
+    let steps = int_of_float ( path_len /. step_size ) in
+ 
     let old_res = ref (model { id = 0; scores } data) in
-    let momentum = normal sth mu sigma in
-    let gradient = -. ( -. mu /.  sigma ** 2 ) in
-    
+    let momentum sth = normal sth mu sigma in
+ 
+ 
+ 
     (* returns true with probability "p" *)
-    let decide p = Random.float 1. <= p in
-    let min_s x = if 1. > x then x else  1. in
+    (* let decide p = Random.float 1. <= p in *)
+    (* let min_s x = if 1. > x then x else  1. in *)
     (* H the hamiltonian discretized *)
-    let H p q  =
-      let r_p = ref p in
-      let r_q = ref q in
-      for i = 0 to steps do
-        r_p :=  !r_p  + step_size *. ( gradient /. 2.) 
-        r_q :=  !r_q + !r_p *. step_size
-        r_p :=  !r_p  + step_size *. ( gradient /. 2.) 
-      
-      done
-      !r_p , !r_q
-      in 
-    
+ 
+    let ham p q gradient    = 
+    let r_p = ref p in
+    let r_q = ref q in
+    for _ = 0 to steps do
+      r_p :=  !r_p  +. step_size *. ( gradient /. 2.) ;
+      r_q :=  !r_q  +. !r_p *. step_size ;
+      r_p :=  !r_p  +. step_size *. ( gradient /. 2.) 
+    done;
+    !r_p , !r_q
+    in 
+ 
     let exec i _ =  
       if i=0 then !old_res 
       else begin
-        let r = model { id = i; scores } data  in
-        let acc  = Random.float 1.0  in
-        (* edit next line properly *)
-        let pq = (exp ( -. H sth sth ))  ./ (exp ( -. H sth_1 sth_1)) in
-        let alpha = min_s pq   in 
-        if acc < alpha
-        (* if scores.(i) >= scores.(i-1) || decide (scores.(i-1) /. scores.(i) ) *)
-        then old_res := r;
-        !old_res
+        (* let s1 = scores.(i) in  *)
+        let s_1 = scores.(i-1) in
+        
+        if s_1 = -.infinity then begin 
+          (*the old score is -inf, then we accept the new execution *)
+          old_res := model { id = i; scores } data;
+          !old_res
+        end
+        else begin 
+
+          let q0 =   s_1 in
+          let p0 =  momentum (Random.float 1.0) in
+          let gradient = -. (  q0 -. mu /.  sigma ** 2. ) in
+          let p1, q1 = ham p0 q0 gradient in  
+          let r = model { id = i; scores } data  in
+ 
+          (* edit next line properly *)
+ 
+ 
+          (* let pq = (exp ( -. ham   s1   s1   ))  /. (exp ( -. ham s_1 s_1)) in *)
+          let q0_nlp = neg_log_prob q0 mu sigma in 
+          let q1_nlp = neg_log_prob q1 mu sigma in
+          let p0_nlp = neg_log_prob p0 0. 1. in
+          let p1_nlp = neg_log_prob p1 0. 1. in
+          let target = q0_nlp -. q1_nlp  (*P(q1)/P(q0)*) in
+          let adj = p1_nlp -. p0_nlp  (*P(p0)/P(p1)*) in
+          let alpha = target +. adj in (*temp line*)
+          (* let alpha = min_s pq   in  *)
+          let acc  = Random.float 1.0  in
+          if acc < alpha
+          (* if scores.(i) >= scores.(i-1) || decide (scores.(i-1) /. scores.(i) ) *)
+          then old_res := r;
+          !old_res 
+        end
       end
     in 
     let values = Array.mapi exec scores in
     Distribution.support ~values ~logits:scores
 end
- *)
-
-(* 
-(* @MB to do single site goes here *)
-module MH_MCMC = struct
-
-type like_prior = {
-  log_likelihood : float;
-  log_prior : float;
-}
-type 'a mcmc_sample = {
-  value : 'a;
-  like_prior : like_prior
-}
-  type prob = { id : int; scores : float array }
-  (* let q x y =
-    let dist =  x - y in 
-    exp  *)
-  (* let target v =  (*do sth with v*) *)
-  let min_s x = if 1. > x then x else  1.
-
-  let sample _prob d = Distribution.draw d
-  (* let q prob =   *)
-
-  let MH prob d n q trace scores = 
-    let x_current = sample prob d in
-    for  i = 0 to n do 
-      let x_new_val = (q x_current ) in 
-      let x_new_score = scores in
-      let rw  = Random.float 1.0  in
-      let  p = (target x_new ) /. (target x_current) in 
-      let pq_ratio = in (* ici faut diviser les scores*)
-      let alpha = min_s pq   in 
-      if alpha > rw 
-        then 
-        (*inserer dans le trace*)
-          (* trace <- Array.append trace [|x_new_val|]; *)
-          (* insert score too, or should we have trace as array of a custom type pair {value,score?} *)
-          x_current = x_new_val
-        else
-          (* trace <- Array.append trace [|x_current|]; *)
-          (* + maj score aussi *)
-    done
-
-  let factor prob s = prob.scores.(prob.id) <- prob.scores.(prob.id) +. s
-  let observe prob d x = factor prob (Distribution.logpdf d x)
-  let assume prob p = factor prob (if p then 0. else -.infinity)
-*)

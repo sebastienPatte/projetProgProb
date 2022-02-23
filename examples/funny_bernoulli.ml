@@ -9,6 +9,7 @@ let h = Plot.create ~m:3 ~n:3 ("graphs/funny_bernoulli.png") ;;
 
 let graph values probs title x y = 
   if gen_graph then begin
+    Format.printf "graph\n";
   Plot.subplot h x y;
   let xaxis = Array.mapi (fun i v -> 
     Format.printf "%d" v ;
@@ -36,45 +37,10 @@ let _ =
   let dist = infer funny_bernoulli () in
   let { values; probs; _ } = get_support ~shrink:true dist in
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
-  
+  Format.printf "graph\n";
   (* let probs = Array.map (Float.exp) probs in *)
   graph values probs "enum" 0 0
-  
-  
 
-
-  (* open Basic.Single_site_MH
-
-  let funny_bernoulli prob () =
-    let a = sample prob (bernoulli ~p:0.5) in
-    let b = sample prob (bernoulli ~p:0.5) in
-    let c = sample prob (bernoulli ~p:0.5) in
-    let () = assume prob (a = 1 || b = 1) in
-    a + b + c
-  
-  let _ =
-    Format.printf "@.-- Funny Bernoulli, Single_site_MH Sampling --@.";
-    let dist = infer funny_bernoulli () in
-    let { values; probs; _ } = get_support ~shrink:true dist in
-    Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values
-   *)
-    
-open Basic.Multi_sites_MH
-
-let funny_bernoulli prob () =
-  let a = sample prob (bernoulli ~p:0.5) in
-  let b = sample prob (bernoulli ~p:0.5) in
-  let c = sample prob (bernoulli ~p:0.5) in
-  let () = assume prob (a = 1 || b = 1) in
-  a + b + c
-
-let _ =
-  Format.printf "@.-- Funny Bernoulli, Multi_sites_MH Sampling --@.";
-  let dist = infer funny_bernoulli () in
-  let { values; probs; _ } = get_support ~shrink:true dist in
-  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
-  
-  graph values probs "multi_sites_MH" 0 1
 
 open Basic.Rejection_sampling
 
@@ -95,7 +61,27 @@ let _ =
   (* add 0 value/prob for graph generation*)
   let values = Array.append values [|0|] in
   let probs = Array.append probs [|0.|] in
-  graph values probs "rejection" 0 2
+  graph values probs "rejection" 0 1
+
+  
+open Basic.Multi_sites_MH
+
+let funny_bernoulli prob () =
+  let a = sample prob (bernoulli ~p:0.5) in
+  let b = sample prob (bernoulli ~p:0.5) in
+  let c = sample prob (bernoulli ~p:0.5) in
+  let () = assume prob (a = 1 || b = 1) in
+  a + b + c
+
+let _ =
+  Format.printf "@.-- Funny Bernoulli, Multi_sites_MH Sampling --@.";
+  let dist = infer funny_bernoulli () in
+  let { values; probs; _ } = get_support ~shrink:true dist in
+  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
+  
+  graph values probs "multi_MH" 0 2
+
+
 
 open Basic.Importance_sampling
 
@@ -112,6 +98,24 @@ let _ =
   let { values; probs; _ } = get_support ~shrink:true dist in
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
   graph values probs "importance" 1 0
+
+open Basic.HMC
+
+let funny_bernoulli prob () =
+  let a = sample prob (bernoulli ~p:0.5) in
+  let b = sample prob (bernoulli ~p:0.5) in
+  let c = sample prob (bernoulli ~p:0.5) in
+  let () = assume prob (a = 1 || b = 1) in
+  a + b + c
+
+let _ =
+  Format.printf "@.-- Funny Bernoulli, Basic HMC Sampling --@.";
+  let dist = infer funny_bernoulli () in
+  let { values; probs; _ } = get_support ~shrink:true dist in
+  Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
+  graph values probs "HMC" 1 1
+
+
 open Cps_operators
 open Infer.Importance_sampling
 
@@ -127,7 +131,7 @@ let _ =
   let dist = infer funny_bernoulli () in
   let { values; probs; _ } = get_support ~shrink:true dist in
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
-  graph values probs "CPS_importance" 1 1
+  graph values probs "CPS_importance" 1 2
 
 open Infer.Multi_MH
 
@@ -143,7 +147,7 @@ let _ =
   let dist = infer funny_bernoulli () in
   let { values; probs; _ } = get_support ~shrink:true dist in
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
-  graph values probs "CPS_multi_sites_MH" 1 2
+  graph values probs "CPS_multi_MH" 2 0
 
 open Infer.MH
 
@@ -159,7 +163,7 @@ let _ =
   let dist = infer funny_bernoulli () in
   let { values; probs; _ } = get_support ~shrink:true dist in
   Array.iteri (fun i x -> Format.printf "%d %f@." x probs.(i)) values;
-  graph values probs "MH" 2 0
+  graph values probs "CPS_MH" 2 1
   
 open Infer.Gen
 
