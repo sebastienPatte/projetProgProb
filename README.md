@@ -17,7 +17,7 @@ Once edited run (keep the text file name):
 dune exec ./examples/triangles.exe >> triangle.txt
 ```
 
-To visualize the drawn triangle run:
+Then you can use any tool like gnuplot to visualize the outcome, a ready to use script visualize the sampled triangle is provided, just run:
 
 ```
 python rand_triangle.py
