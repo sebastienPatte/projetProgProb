@@ -11,5 +11,6 @@
  (depends
   (dune (>= 2.9))
   (owl (>= 1.0))
+  (owl-plplot (>= 1.0.0))
  )
 )

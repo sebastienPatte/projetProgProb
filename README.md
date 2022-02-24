@@ -1,10 +1,15 @@
 # projetProgProb
 
+## Dependencies
+```
+opam install . --deps-only
+```
+
 ## Running examples:
 
 To run examples run `cd ` to the cloned directory and run:
 ```
-dune exec ./examples/<name>.exe  [-verbose]
+dune exec ./examples/<name>.exe 
 ```
 
 

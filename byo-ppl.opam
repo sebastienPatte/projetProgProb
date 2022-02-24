@@ -8,6 +8,7 @@ bug-reports: "https://github.com/gbdrt/byo-ppl/issues"
 depends: [
   "dune" {>= "2.9" & >= "2.9"}
   "owl" {>= "1.0"}
+  "owl-plplot" {>= "1.0.0"}
   "odoc" {with-doc}
 ]
 build: [
